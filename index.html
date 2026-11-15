@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e6b66">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Lista del Súper</title>
+<style>
+:root{--bg:#f1f6f4;--card:#fff;--ink:#12302f;--mut:#5d7775;--line:#cddcd8;--pri:#0e6b66;--onpri:#fff;--cit:#f5b82e;--red:#c8452f;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1c1b;--card:#172928;--ink:#e6f1ef;--mut:#8fb0ac;--line:#2c4745;--pri:#3fb5ad;--onpri:#06201f;--red:#ff8a73}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.35 ui-rounded,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top)}
+#app{max-width:720px;margin:0 auto;padding:12px 14px calc(88px + env(safe-area-inset-bottom))}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:40px}
+button:disabled{opacity:.35}
+button.pri{background:var(--pri);color:var(--onpri);border-color:var(--pri);font-weight:600}
+button.dng{color:var(--red)}
+button.wide{width:100%;margin-top:18px;min-height:48px}
+input,select{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px}
+:focus-visible{outline:3px solid var(--cit);outline-offset:1px}
+.bar,.row3,.row2,.acts,.ctl,.ph{display:flex;gap:8px;align-items:center}
+.bar{margin-bottom:10px}.bar select{flex:1;min-width:0}
+.row3 button{flex:1}.row2 button{flex:1}
+.seg{display:flex}.seg button{border-radius:0;min-width:84px}.seg button:first-child{border-radius:10px 0 0 10px}.seg button:last-child{border-radius:0 10px 10px 0;border-left:0}
+.seg button.on{background:var(--pri);color:var(--onpri);border-color:var(--pri)}
+.hint{color:var(--mut);font-size:14px;margin:8px 0}
+.empty{color:var(--mut);text-align:center;margin:40px 10px}
+.note{background:var(--cit);color:#12302f;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:15px}
+.dc{margin:18px 0 6px 14px;padding-left:18px;border-left:3px dotted var(--line)}
+.dh{display:flex;align-items:center;gap:8px;margin-left:-34px;margin-bottom:4px}
+.dh .dn{flex:1;font-weight:700;font-size:18px}.dh small{color:var(--mut)}
+.stop{width:28px;height:28px;border-radius:50%;background:var(--cit);color:#12302f;font-weight:700;display:grid;place-items:center;font-size:14px;flex:none}
+.di{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:20px;overflow:hidden;flex:none}
+.di img{width:100%;height:100%;object-fit:cover}
+.pr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.nm{flex:1;min-width:0;overflow-wrap:anywhere}.nm small{display:block;color:var(--mut);font-size:13px}
+.th{width:40px;height:40px;object-fit:cover;border-radius:8px;flex:none}
+.ck input{width:24px;height:24px;accent-color:var(--pri)}
+.qt{display:flex;gap:4px}.qt input{width:64px}.qt select{width:60px;padding:8px 2px}
+.buy{min-height:52px}.buy .q{color:var(--pri)}
+.circ{width:28px;height:28px;border-radius:50%;border:2px solid var(--pri);display:grid;place-items:center;color:var(--onpri);flex:none}
+.buy.dn .circ{background:var(--pri)}.buy.dn .nm,.buy.dn .q{text-decoration:line-through;opacity:.5}
+.ctl button{padding:4px 10px;min-height:36px}
+.star{border:0;background:none;font-size:22px;color:var(--line);padding:0 4px}.star.on{color:var(--cit)}
+.add{margin:8px 0;border-style:dashed;width:100%}
+.hi{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}.hi>div:first-child{flex:1}.hi small{display:block;color:var(--mut)}
+h2,h3{margin:12px 0 6px}
+summary{margin:20px 0 6px;color:var(--mut)}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;border-radius:0;background:none;font-size:20px;line-height:1.1;padding:8px 0;color:var(--mut)}
+nav button span{display:block;font-size:12px}nav button.on{color:var(--pri);font-weight:700}
+#sheet{position:fixed;inset:0;background:#0008;display:flex;align-items:flex-end;justify-content:center;z-index:20}
+#sheet[hidden]{display:none}
+.sb{background:var(--card);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
+.sb label{display:block;margin:10px 0;font-size:14px;color:var(--mut)}
+.sb label input,.sb label select{display:block;width:100%;margin-top:4px;color:var(--ink)}
+.sb label.chk{display:flex;gap:8px;align-items:center;color:var(--ink)}.sb label.chk input{width:22px;margin:0}
+.acts{flex-wrap:wrap;margin-top:14px}
+.ph img{width:64px;height:64px;object-fit:cover;border-radius:10px}.ph label{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chips button{font-size:20px;padding:2px 8px;min-height:38px}
+img.big{width:100%;border-radius:12px}
+.cartbar{display:flex;align-items:center;gap:12px;margin:2px 0 8px}.cartbar svg{width:116px;height:auto;flex:none}.cartbar b{display:block;font-size:18px}.cartbar small{color:var(--mut)}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+#toast.show{opacity:1}
+</style></head>
+<body>
+<main id="app"></main>
+<nav><button data-t="lista">🛒<span>Lista</span></button><button data-t="cat">📋<span>Catálogo</span></button><button data-t="resp">💾<span>Respaldo</span></button></nav>
+<div id="sheet" hidden></div><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9),UN=['pza','kg','g','$'],EM=['🥬','🍎','🥩','🐟','🥛','🥚','🍞','🥫','🧊','🍺','🧴','🧹','🍫','🥤'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S,tab='lista',mode='armar',tt,sv;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)};
+const DB=()=>new Promise((res,rej)=>{const r=indexedDB.open('lista-super',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function load(){try{const db=await DB();return await new Promise(r=>{const q=db.transaction('kv').objectStore('kv').get('s');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch(e){return null}}
+function save(){clearTimeout(sv);sv=setTimeout(async()=>{try{const db=await DB();db.transaction('kv','readwrite').objectStore('kv').put(S,'s')}catch(e){toast('No se pudo guardar')}},200)}
+const fresh=()=>{const s={app:'lista-super',v:1,stores:[{id:uid(),name:'Mi súper',order:[]}],depts:[],prods:[],list:{},history:[],lastBackup:0};s.store=s.stores[0].id;
+ [['Frutas y verduras','🥬'],['Carnes y pollo','🥩'],['Lácteos y huevo','🥛'],['Panadería','🍞'],['Abarrotes','🥫'],['Limpieza','🧴']].forEach(([n,e])=>{const d={id:uid(),name:n,emoji:e,img:''};s.depts.push(d);s.stores[0].order.push(d.id)});return s};
+const store=()=>S.stores.find(x=>x.id===S.store)||S.stores[0];
+function order(){const st=store(),ids=st.order.filter(id=>S.depts.some(d=>d.id===id));S.depts.forEach(d=>{if(!ids.includes(d.id))ids.push(d.id)});st.order=ids;return ids.map(id=>S.depts.find(d=>d.id===id))}
+const prodsOf=d=>S.prods.filter(p=>p.dept===d&&!p.del);
+const dIcon=d=>d.img?`<img src="${d.img}" alt="">`:esc(d.emoji||'🛒');
+const fmt=it=>it.q===''||it.q==null?'':(it.u==='$'?'$'+it.q:it.q+' '+it.u);
+const stSel=()=>`<select id="st" aria-label="Súper">${S.stores.map(s=>`<option value="${s.id}"${s.id==S.store?' selected':''}>${esc(s.name)}</option>`).join('')}</select>`;
+const thumb=p=>p.img?`<img class="th" data-a="pic" data-id="${p.id}" src="${p.img}" alt="">`:'';
+const unitOpts=sel=>UN.map(u=>`<option${u===sel?' selected':''}>${u}</option>`).join('');
+function mv(a,i,d){const j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]]}
+function mvDept(id,d){const o=order().map(x=>x.id);mv(o,o.indexOf(id),d);store().order=o;save();render()}
+function mvProd(id,d){const p=S.prods.find(x=>x.id===id),sib=prodsOf(p.dept),j=sib.indexOf(p)+d;if(j<0||j>=sib.length)return;const a=S.prods.indexOf(p),b=S.prods.indexOf(sib[j]);[S.prods[a],S.prods[b]]=[S.prods[b],S.prods[a]];save();render()}
+function sheet(h,m){const s=$('#sheet');s.innerHTML=`<div class="sb">${h}</div>`;s.hidden=false;s.onclick=e=>{if(e.target===s)closeSheet()};m&&m()}
+const closeSheet=()=>{$('#sheet').hidden=true;$('#sheet').innerHTML=''};
+function pick(inp,max,cb){inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.src=r.result};r.readAsDataURL(f)}}
+async function dl(name,blob){const f=new File([blob],name,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return true}catch(e){if(e.name==='AbortError')return false}}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);return true}
+
+function rowArmar(p,it){return `<div class="pr"><label class="ck"><input type="checkbox" data-a="tog" data-id="${p.id}"${it?' checked':''} aria-label="Agregar ${esc(p.name)}"></label>${thumb(p)}<div class="nm">${esc(p.name)}${p.freq?' ★':''}<small>${esc(p.ref)}</small></div>${it?`<div class="qt"><input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.q)}" data-a="q" data-id="${p.id}" aria-label="Cantidad"><select data-a="u" data-id="${p.id}" aria-label="Unidad">${unitOpts(it.u)}</select></div>`:''}</div>`}
+function rowBuy(p,it){return `<div class="pr buy${it.done?' dn':''}" data-a="done" data-id="${p.id}"><span class="circ">${it.done?'✓':''}</span>${thumb(p)}<div class="nm">${esc(p.name)}<small>${esc(p.ref)}</small></div><b class="q">${esc(fmt(it))}</b></div>`}
+const CART=[[7,'<circle cx="112" cy="26" r="15" fill="#6dbf5a"/><path d="M112 14v24M100 20l24 12M124 20l-24 12" stroke="#4a9a3c" stroke-width="2"/>'],
+[5,'<circle cx="72" cy="28" r="11" fill="#f08a1c"/>'],
+[9,'<rect x="150" y="14" width="20" height="30" rx="3" fill="#f5b82e"/><rect x="154" y="22" width="12" height="8" fill="#fff"/>'],
+[1,'<circle cx="56" cy="32" r="14" fill="#d9432f"/><path d="M56 19q2-8 9-8q-1 8-9 8z" fill="#4a9a3c"/>'],
+[2,'<ellipse cx="98" cy="30" rx="19" ry="12" fill="#d9a35b"/><path d="M88 24l6 8M98 22l6 8M108 24l6 8" stroke="#b07a35" stroke-width="2" stroke-linecap="round"/>'],
+[3,'<rect x="128" y="10" width="22" height="36" rx="3" fill="#fff" stroke="#12302f" stroke-width="2"/><rect x="128" y="20" width="22" height="10" fill="#4a90d9"/>']];
+function cartBar(L){const n=Object.keys(L).length,dn=Object.values(L).filter(x=>x.done).length,k='style="stroke:var(--ink)"';
+ const svg=`<svg viewBox="0 0 180 108" role="img" aria-label="${n?'Carrito con productos':'Carrito vacío'}">${CART.filter(c=>n>=c[0]).map(c=>c[1]).join('')}<path d="M6 14H28L50 80H154M66 80V90M140 80V90" fill="none" ${k} stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 38H172L156 76H46Z" style="fill:var(--card);stroke:var(--ink)" stroke-width="4" stroke-linejoin="round"/><path d="M40 57H165M70 38L66 76M100 38L98 76M130 38L130 76M154 38L148 76" style="stroke:var(--line)" stroke-width="2" fill="none"/><circle cx="66" cy="96" r="8" style="fill:var(--ink)"/><circle cx="140" cy="96" r="8" style="fill:var(--ink)"/></svg>`;
+ return `<div class="cartbar">${svg}<div><b>${n?n+' producto'+(n>1?'s':'')+' en la lista':'Carrito vacío'}</b><small>${!n?(mode=='armar'?'Marca productos para llenarlo':'Elige productos en Armar'):(mode=='comprar'?dn+' de '+n+' comprados':'Listos para comprar')}</small></div></div>`}
+function vLista(){
+ const L=S.list,o=order(),n=Object.keys(L).length,days=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):999;
+ let h=S.prods.length&&days>14?`<div class="note" data-a="goresp">${S.lastBackup?'Hace '+days+' días':'Aún'} no haces un respaldo. Toca aquí para hacerlo.</div>`:'';
+ h+=`<div class="bar">${stSel()}<div class="seg"><button data-a="mode" data-id="armar" class="${mode=='armar'?'on':''}">Armar</button><button data-a="mode" data-id="comprar" class="${mode=='comprar'?'on':''}">Comprar</button></div></div>`;
+ h+=cartBar(L);
+ if(mode=='armar')h+=`<div class="row3"><button data-a="newl">Nueva lista</button><button data-a="all">Todo</button><button data-a="none">Ninguno</button></div><p class="hint">${n} en la lista. “Nueva lista” carga los productos ★ frecuentes.</p>`;
+ let k=0;
+ o.forEach(d=>{let ps=prodsOf(d.id);if(mode=='comprar')ps=ps.filter(p=>L[p.id]);if(!ps.length)return;k++;
+  const dn=ps.filter(p=>L[p.id]&&L[p.id].done).length;
+  h+=`<section class="dc"><div class="dh"><span class="stop">${k}</span><span class="di">${dIcon(d)}</span><span class="dn">${esc(d.name)}</span>${mode=='comprar'?`<small>${dn}/${ps.length}</small>`:''}</div>`+ps.map(p=>mode=='armar'?rowArmar(p,L[p.id]):rowBuy(p,L[p.id])).join('')+'</section>'});
+ if(!k)h+=`<p class="empty">${mode=='armar'?'Aún no hay productos. Agrégalos en Catálogo.':'La lista está vacía. Elige productos en Armar.'}</p>`;
+ if(mode=='comprar'&&n)h+='<button class="pri wide" data-a="close">Cerrar lista y guardar en historial</button>';
+ return h}
+function vCat(){
+ let h=`<div class="bar">${stSel()}<button data-a="storeEdit">Editar</button><button data-a="storeNew">+ Súper</button></div><p class="hint">El orden de los departamentos es propio de cada súper: sigue tu recorrido.</p>`;
+ const o=order();
+ o.forEach((d,i)=>{h+=`<section class="dc"><div class="dh"><span class="stop">${i+1}</span><span class="di">${dIcon(d)}</span><span class="dn">${esc(d.name)}</span><span class="ctl"><button data-a="dup" data-id="${d.id}"${i?'':' disabled'} aria-label="Subir">↑</button><button data-a="ddn" data-id="${d.id}"${i<o.length-1?'':' disabled'} aria-label="Bajar">↓</button><button data-a="dedit" data-id="${d.id}" aria-label="Editar">✎</button></span></div>`;
+  const ps=prodsOf(d.id);
+  ps.forEach((p,j)=>{h+=`<div class="pr"><button class="star${p.freq?' on':''}" data-a="freq" data-id="${p.id}" aria-label="Frecuente">★</button>${thumb(p)}<div class="nm">${esc(p.name)}<small>${p.unit}${p.ref?' – '+esc(p.ref):''}</small></div><span class="ctl"><button data-a="pup" data-id="${p.id}"${j?'':' disabled'} aria-label="Subir">↑</button><button data-a="pdn" data-id="${p.id}"${j<ps.length-1?'':' disabled'} aria-label="Bajar">↓</button><button data-a="pedit" data-id="${p.id}" aria-label="Editar">✎</button></span></div>`});
+  h+=`<button class="add" data-a="padd" data-id="${d.id}">+ Producto</button></section>`});
+ h+='<button class="add" data-a="dadd">+ Departamento</button>';
+ const tr=S.prods.filter(p=>p.del);
+ if(tr.length)h+=`<details><summary>Papelera (${tr.length})</summary>${tr.map(p=>`<div class="pr"><div class="nm">${esc(p.name)}</div><button data-a="rest" data-id="${p.id}">Restaurar</button><button class="dng" data-a="purge" data-id="${p.id}">Eliminar</button></div>`).join('')}</details>`;
+ return h}
+function vResp(){
+ const d=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):null;
+ let h=`<h2>Respaldo</h2><p class="hint">${S.lastBackup?'Último respaldo: hace '+d+(d==1?' día.':' días.'):'Aún no has hecho un respaldo.'} Guarda el archivo en Google Drive o iCloud.</p><div class="row2"><button class="pri" data-a="exp">Exportar respaldo</button><button data-a="imp">Importar respaldo</button></div><input type="file" id="imf" accept=".json,application/json" hidden><h2>Historial de listas</h2>`;
+ if(!S.history.length)h+='<p class="hint">Cuando cierres una lista en modo Comprar, aparecerá aquí.</p>';
+ S.history.forEach(x=>{h+=`<div class="hi"><div><b>${new Date(x.date).toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'})}</b> – ${esc(x.store)}<small>${x.items.length} productos</small></div><span class="ctl"><button data-a="hcsv" data-id="${x.id}">CSV</button><button data-a="hshare" data-id="${x.id}">Enviar</button><button class="dng" data-a="hdel" data-id="${x.id}" aria-label="Borrar">✕</button></span></div>`});
+ return h}
+function render(){const y=scrollY;$('#app').innerHTML={lista:vLista,cat:vCat,resp:vResp}[tab]();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==tab));scrollTo(0,y)}
+
+function newList(){if(Object.keys(S.list).length&&!confirm('Se reemplazará la lista actual. ¿Continuar?'))return;S.list={};S.prods.filter(p=>p.freq&&!p.del).forEach(p=>S.list[p.id]={q:'',u:p.unit||'pza',done:false});save();render()}
+function closeList(){if(!confirm('¿Cerrar la lista y guardarla en el historial?'))return;
+ const items=Object.entries(S.list).map(([id,it])=>{const p=S.prods.find(x=>x.id===id);return p&&{name:p.name,dept:(S.depts.find(d=>d.id===p.dept)||{}).name||'',q:it.q,u:it.u,done:!!it.done}}).filter(Boolean);
+ S.history.unshift({id:uid(),date:new Date().toISOString(),store:store().name,items});S.history=S.history.slice(0,200);S.list={};mode='armar';save();render();toast('Lista guardada en el historial')}
+function prodForm(id,deptId){
+ const p=id?S.prods.find(x=>x.id===id):{name:'',dept:deptId,unit:'pza',ref:'',img:'',freq:false};let img=p.img;
+ sheet(`<h3>${id?'Editar producto':'Nuevo producto'}</h3><label>Nombre<input id="f-n" value="${esc(p.name)}"></label><label>Departamento<select id="f-d">${order().map(d=>`<option value="${d.id}"${d.id===p.dept?' selected':''}>${esc(d.name)}</option>`).join('')}</select></label><label>Unidad habitual<select id="f-u">${unitOpts(p.unit)}</select></label><label>Precio de referencia<input id="f-r" value="${esc(p.ref)}" placeholder="Ej. $45/kg"></label><label class="chk"><input type="checkbox" id="f-f"${p.freq?' checked':''}> Frecuente: entra en cada lista nueva</label><div class="ph"><img id="f-p" alt=""${img?` src="${img}"`:' hidden'}><label class="btn"><button type="button" onclick="$('#f-i').click()">Foto</button><input type="file" id="f-i" accept="image/*" hidden></label><button type="button" id="f-x">Quitar foto</button></div><div class="acts"><button class="pri" id="f-s">Guardar</button>${id?'<button class="dng" id="f-b">Dar de baja</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
+  pick($('#f-i'),800,u=>{img=u;$('#f-p').src=u;$('#f-p').hidden=false});
+  $('#f-x').onclick=()=>{img='';$('#f-p').hidden=true};$('#f-c').onclick=closeSheet;
+  $('#f-s').onclick=()=>{const n=$('#f-n').value.trim();if(!n){$('#f-n').focus();return}
+   const v={name:n,dept:$('#f-d').value,unit:$('#f-u').value,ref:$('#f-r').value.trim(),freq:$('#f-f').checked,img};
+   if(id){const q=S.prods.find(x=>x.id===id);if(q.dept!==v.dept){S.prods.splice(S.prods.indexOf(q),1);Object.assign(q,v);S.prods.push(q)}else Object.assign(q,v)}else S.prods.push({id:uid(),del:false,...v});
+   save();closeSheet();render()};
+  if(id)$('#f-b').onclick=()=>{if(confirm('¿Dar de baja “'+p.name+'”? Podrás restaurarlo desde la papelera.')){p.del=true;delete S.list[id];save();closeSheet();render()}}})}
+function deptForm(id){
+ const d=id?S.depts.find(x=>x.id===id):{name:'',emoji:'🛒',img:''};let img=d.img;
+ sheet(`<h3>${id?'Editar departamento':'Nuevo departamento'}</h3><label>Nombre<input id="f-n" value="${esc(d.name)}"></label><label>Emoji<input id="f-e" value="${esc(d.emoji)}"></label><div class="chips">${EM.map(e=>`<button type="button" data-e="${e}">${e}</button>`).join('')}</div><div class="ph"><img id="f-p" alt=""${img?` src="${img}"`:' hidden'}><button type="button" onclick="$('#f-i').click()">Usar foto</button><input type="file" id="f-i" accept="image/*" hidden><button type="button" id="f-x">Quitar foto</button></div><div class="acts"><button class="pri" id="f-s">Guardar</button>${id?'<button class="dng" id="f-b">Eliminar</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
+  document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{$('#f-e').value=b.dataset.e;img='';$('#f-p').hidden=true});
+  pick($('#f-i'),160,u=>{img=u;$('#f-p').src=u;$('#f-p').hidden=false});
+  $('#f-x').onclick=()=>{img='';$('#f-p').hidden=true};$('#f-c').onclick=closeSheet;
+  $('#f-s').onclick=()=>{const n=$('#f-n').value.trim();if(!n){$('#f-n').focus();return}const v={name:n,emoji:$('#f-e').value.trim()||'🛒',img};if(id)Object.assign(d,v);else S.depts.push({id:uid(),...v});save();closeSheet();render()};
+  if(id)$('#f-b').onclick=()=>{if(prodsOf(id).length){alert('Primero mueve o da de baja los productos de este departamento.');return}if(confirm('¿Eliminar “'+d.name+'”?')){S.depts=S.depts.filter(x=>x.id!==id);S.prods=S.prods.filter(p=>p.dept!==id);save();closeSheet();render()}}})}
+function storeForm(isNew){const st=store();
+ sheet(`<h3>${isNew?'Nuevo súper':'Editar súper'}</h3><label>Nombre<input id="f-n" value="${isNew?'':esc(st.name)}"></label><p class="hint">Cada súper tiene su propio orden de departamentos.</p><div class="acts"><button class="pri" id="f-s">Guardar</button>${!isNew&&S.stores.length>1?'<button class="dng" id="f-b">Eliminar</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
+  $('#f-c').onclick=closeSheet;
+  $('#f-s').onclick=()=>{const n=$('#f-n').value.trim();if(!n)return;if(isNew){const s={id:uid(),name:n,order:[...st.order]};S.stores.push(s);S.store=s.id}else st.name=n;save();closeSheet();render()};
+  const b=$('#f-b');if(b)b.onclick=()=>{if(confirm('¿Eliminar este súper? Tus productos se conservan.')){S.stores=S.stores.filter(x=>x!==st);S.store=S.stores[0].id;save();closeSheet();render()}}})}
+async function exp(){const ok=await dl('lista-super-'+new Date().toISOString().slice(0,10)+'.json',new Blob([JSON.stringify(S)],{type:'application/json'}));if(ok){S.lastBackup=Date.now();save();render();toast('Respaldo exportado')}}
+function imp(){const f=$('#imf');f.value='';f.onchange=async()=>{try{const d=JSON.parse(await f.files[0].text());if(d.app!=='lista-super'||!Array.isArray(d.depts)||!Array.isArray(d.prods)||!Array.isArray(d.stores))throw 0;
+ sheet(`<h3>Importar respaldo</h3><p>${d.depts.length} departamentos, ${d.prods.length} productos, ${d.stores.length} súper(s).</p><div class="acts"><button class="dng" id="i-r">Reemplazar todo</button><button class="pri" id="i-m">Combinar</button><button id="i-c">Cancelar</button></div>`,()=>{
+  $('#i-c').onclick=closeSheet;
+  $('#i-r').onclick=()=>{S=Object.assign(fresh(),d);if(!S.stores.some(s=>s.id===S.store))S.store=S.stores[0].id;save();closeSheet();render();toast('Respaldo restaurado')};
+  $('#i-m').onclick=()=>{const add=(a,b)=>(b||[]).forEach(x=>{if(!a.some(y=>y.id===x.id))a.push(x)});add(S.depts,d.depts);add(S.prods,d.prods);add(S.stores,d.stores);add(S.history,d.history);save();closeSheet();render();toast('Respaldo combinado')}})}
+ catch(e){alert('El archivo no es un respaldo válido de Lista del Súper.')}};f.click()}
+const csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+const app=$('#app');
+app.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,id=el.dataset.id,p=S.prods.find(x=>x.id===id);
+ switch(a){
+  case 'mode':mode=id;render();break;
+  case 'newl':newList();break;
+  case 'all':S.prods.filter(x=>!x.del).forEach(x=>{if(!S.list[x.id])S.list[x.id]={q:'',u:x.unit||'pza',done:false}});save();render();break;
+  case 'none':if(Object.keys(S.list).length&&!confirm('¿Quitar todos los productos de la lista?'))break;S.list={};save();render();break;
+  case 'done':S.list[id].done=!S.list[id].done;save();render();break;
+  case 'close':closeList();break;
+  case 'pic':sheet(`<img class="big" src="${p.img}" alt=""><div class="acts"><button id="f-c">Cerrar</button></div>`,()=>$('#f-c').onclick=closeSheet);break;
+  case 'goresp':tab='resp';render();scrollTo(0,0);break;
+  case 'dup':mvDept(id,-1);break;case 'ddn':mvDept(id,1);break;
+  case 'dedit':deptForm(id);break;case 'dadd':deptForm();break;
+  case 'pup':mvProd(id,-1);break;case 'pdn':mvProd(id,1);break;
+  case 'pedit':prodForm(id);break;case 'padd':prodForm(null,id);break;
+  case 'freq':p.freq=!p.freq;save();render();break;
+  case 'storeEdit':storeForm(false);break;case 'storeNew':storeForm(true);break;
+  case 'rest':p.del=false;save();render();break;
+  case 'purge':if(confirm('¿Eliminar “'+p.name+'” definitivamente?')){S.prods=S.prods.filter(x=>x!==p);save();render()}break;
+  case 'exp':exp();break;case 'imp':imp();break;
+  case 'hdel':if(confirm('¿Borrar esta lista del historial?')){S.history=S.history.filter(h=>h.id!==id);save();render()}break;
+  case 'hcsv':{const x=S.history.find(h=>h.id===id),rows=[['Departamento','Producto','Cantidad','Unidad','Comprado'],...x.items.map(i=>[i.dept,i.name,i.q,i.u,i.done?'sí':'no'])];dl('lista-'+x.date.slice(0,10)+'.csv',new Blob(['\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\n')],{type:'text/csv'}));break}
+  case 'hshare':{const x=S.history.find(h=>h.id===id),by={};x.items.forEach(i=>(by[i.dept]=by[i.dept]||[]).push('• '+i.name+(fmt(i)?': '+fmt(i):'')));const t=Object.entries(by).map(([k,v])=>k+'\n'+v.join('\n')).join('\n\n');if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Copiado'));break}
+ }});
+app.addEventListener('change',e=>{const t=e.target,a=t.dataset.a,id=t.dataset.id;
+ if(t.id=='st'){S.store=t.value;save();render();return}
+ if(a=='tog'){if(t.checked){const p=S.prods.find(x=>x.id===id);S.list[id]={q:'',u:p.unit||'pza',done:false}}else delete S.list[id];save();render()}
+ else if(a=='q'){S.list[id].q=t.value;save()}
+ else if(a=='u'){S.list[id].u=t.value;save()}});
+(async()=>{S=await load()||fresh();if(!S.stores.some(s=>s.id===S.store))S.store=S.stores[0].id;
+ if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();scrollTo(0,0)});
+ render();
+ if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})})();
+</script>
+</body></html>
