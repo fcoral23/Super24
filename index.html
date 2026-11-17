@@ -61,6 +61,7 @@ nav button span{display:block;font-size:12px}nav button.on{color:var(--pri);font
 .acts{flex-wrap:wrap;margin-top:14px}
 .ph img{width:64px;height:64px;object-fit:cover;border-radius:10px}.ph label{margin:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chips button{font-size:20px;padding:2px 8px;min-height:38px}
+.ok{color:var(--pri);font-weight:600}
 .two{display:flex;gap:10px}.two label{flex:1}
 img.big{width:100%;border-radius:12px}
 .cartbar{display:flex;align-items:center;gap:12px;margin:2px 0 8px}.cartbar svg{width:116px;height:auto;flex:none}.cartbar b{display:block;font-size:18px}.cartbar small{color:var(--mut)}
@@ -86,7 +87,9 @@ const mkIt=p=>({q:p.qty||'1',u:p.unit||'pza',done:false});
 const sortedLists=()=>[...S.lists].sort((a,b)=>b.date.localeCompare(a.date)||(b.t||0)-(a.t||0));
 const cur=()=>S.lists.find(l=>l.id===S.cur)||S.lists[0];
 function migrate(){if(!S.lists||!S.lists.length){S.lists=[];const l=mkList(S,'Mi lista',today());if(S.list)l.items=S.list}delete S.list;if(!S.lists.some(x=>x.id===S.cur))S.cur=sortedLists()[0].id}
-const listBar=()=>`<div class="bar"><select id="ls" aria-label="Lista">${sortedLists().map(l=>`<option value="${l.id}"${l.id==S.cur?' selected':''}>${fdate(l.date)} – ${esc(l.name)}</option>`).join('')}</select><button data-a="lnew">+ Nueva</button><button data-a="ledit" aria-label="Editar lista">✎</button></div>`;
+const lp=l=>{const v=Object.values(l.items),d=v.filter(x=>x.done).length;return v.length?' ('+d+'/'+v.length+')':''};
+const UNL=new Set();
+const listBar=()=>`<div class="bar"><select id="ls" aria-label="Lista">${sortedLists().map(l=>`<option value="${l.id}"${l.id==S.cur?' selected':''}>${fdate(l.date)} – ${esc(l.name)}${lp(l)}</option>`).join('')}</select><button data-a="lnew">+ Nueva</button><button data-a="ledit" aria-label="Editar lista">✎</button></div>`;
 const fresh=()=>{const s={app:'lista-super',v:1,stores:[{id:uid(),name:'Mi súper',order:[]}],depts:[],prods:[],lists:[],cur:'',history:[],lastBackup:0};s.store=s.stores[0].id;mkList(s,'Mi lista',today());
  [['Frutas y verduras','🥬'],['Carnes y pollo','🥩'],['Lácteos y huevo','🥛'],['Panadería','🍞'],['Abarrotes','🥫'],['Limpieza','🧴']].forEach(([n,e])=>{const d={id:uid(),name:n,emoji:e,img:''};s.depts.push(d);s.stores[0].order.push(d.id)});return s};
 const store=()=>S.stores.find(x=>x.id===S.store)||S.stores[0];
@@ -105,7 +108,8 @@ const closeSheet=()=>{$('#sheet').hidden=true;$('#sheet').innerHTML=''};
 function pick(inp,max,cb){inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.src=r.result};r.readAsDataURL(f)}}
 async function dl(name,blob){const f=new File([blob],name,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return true}catch(e){if(e.name==='AbortError')return false}}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);return true}
 
-function rowArmar(p,it){return `<div class="pr"><label class="ck"><input type="checkbox" data-a="tog" data-id="${p.id}"${it?' checked':''} aria-label="Agregar ${esc(p.name)}"></label>${thumb(p)}<div class="nm">${esc(p.name)}${p.freq?' ★':''}<small>${esc(p.ref)}</small></div>${it?`<div class="qt"><input type="text" inputmode="decimal" autocomplete="off" value="${esc(it.q)}" data-a="q" data-id="${p.id}" aria-label="Cantidad"><select data-a="u" data-id="${p.id}" aria-label="Unidad">${unitOpts(it.u)}</select></div>`:''}</div>`}
+function rowArmar(p,it){const dn=it&&it.done,lk=dn&&!UNL.has(p.id);
+ return `<div class="pr"><label class="ck"><input type="checkbox" data-a="tog" data-id="${p.id}"${it?' checked':''} aria-label="Agregar ${esc(p.name)}"></label>${thumb(p)}<div class="nm">${esc(p.name)}${p.freq?' ★':''}<small>${dn?'<span class="ok">✓ Comprado</span> ':''}${esc(p.ref)}</small></div>${it?`<div class="qt"><input type="text" inputmode="decimal" autocomplete="off" value="${esc(it.q)}" data-a="q" data-id="${p.id}" aria-label="Cantidad"${lk?' disabled':''}><select data-a="u" data-id="${p.id}" aria-label="Unidad"${lk?' disabled':''}>${unitOpts(it.u)}</select>${lk?`<button data-a="unlock" data-id="${p.id}" aria-label="Desbloquear para editar">🔒</button>`:''}</div>`:''}</div>`}
 function rowBuy(p,it){return `<div class="pr buy${it.done?' dn':''}" data-a="done" data-id="${p.id}"><span class="circ">${it.done?'✓':''}</span>${thumb(p)}<div class="nm">${esc(p.name)}<small>${esc(p.ref)}</small></div><b class="q">${esc(fmt(it))}</b></div>`}
 const CART=[[7,'<circle cx="112" cy="26" r="15" fill="#6dbf5a"/><path d="M112 14v24M100 20l24 12M124 20l-24 12" stroke="#4a9a3c" stroke-width="2"/>'],
 [5,'<circle cx="72" cy="28" r="11" fill="#f08a1c"/>'],
@@ -122,12 +126,13 @@ function vLista(){
  h+=listBar();
  h+=`<div class="bar">${stSel()}<div class="seg"><button data-a="mode" data-id="armar" class="${mode=='armar'?'on':''}">Armar</button><button data-a="mode" data-id="comprar" class="${mode=='comprar'?'on':''}">Comprar</button></div></div>`;
  h+=cartBar(L);
- if(mode=='armar')h+=`<div class="row3"><button data-a="reg">★ Regulares</button><button data-a="all">Todo</button><button data-a="none">Ninguno</button></div><p class="hint">${n} en la lista. “Regulares” agrega los productos marcados con ★.</p>`;
+ if(mode=='armar')h+=`<div class="row3"><button data-a="reg">★ Regulares</button><button data-a="all">Todo</button><button data-a="none">Ninguno</button></div><p class="hint">${n} en la lista. “Regulares” agrega los productos marcados con ★. Lo ya comprado queda protegido con 🔒.</p>`;
  let k=0;
  o.forEach(d=>{let ps=prodsOf(d.id);if(mode=='comprar')ps=ps.filter(p=>L[p.id]);if(!ps.length)return;k++;
   const dn=ps.filter(p=>L[p.id]&&L[p.id].done).length;
   h+=`<section class="dc"><div class="dh"><span class="stop">${k}</span><span class="di">${dIcon(d)}</span><span class="dn">${esc(d.name)}</span>${mode=='comprar'?`<small>${dn}/${ps.length}</small>`:''}</div>`+ps.map(p=>mode=='armar'?rowArmar(p,L[p.id]):rowBuy(p,L[p.id])).join('')+'</section>'});
  if(!k)h+=`<p class="empty">${mode=='armar'?'Aún no hay productos. Agrégalos en Catálogo.':'La lista está vacía. Elige productos en Armar.'}</p>`;
+ if(mode=='comprar')h+='<button class="add" data-a="mode" data-id="armar">+ Agregar o quitar productos</button>';
  return h}
 function vCat(){
  let h=`<div class="bar">${stSel()}<button data-a="storeEdit">Editar</button><button data-a="storeNew">+ Súper</button></div><p class="hint">El orden de los departamentos es propio de cada súper: sigue tu recorrido.</p>`;
@@ -161,7 +166,7 @@ function listForm(id){const l=id?S.lists.find(x=>x.id===id):{name:'',date:today(
    $('#f-csv').onclick=()=>csvOut('lista-'+l.date,lrows(l));
    $('#f-tx').onclick=()=>txtOut(lrows(l));
    $('#f-dup').onclick=()=>{const nl=mkList(S,l.name+' (copia)',today());Object.entries(l.items).forEach(([k,v])=>nl.items[k]={...v,done:false});save();closeSheet();render();toast('Lista duplicada')};
-   const b=$('#f-b');if(b)b.onclick=()=>{if(confirm('¿Eliminar la lista “'+l.name+'”?')){S.lists=S.lists.filter(x=>x!==l);if(S.cur===l.id)S.cur=sortedLists()[0].id;save();closeSheet();render()}}}})}
+   const b=$('#f-b');if(b)b.onclick=()=>{const nd=Object.values(l.items).filter(x=>x.done).length;if(confirm(nd?'Esta lista tiene '+nd+' producto'+(nd>1?'s':'')+' ya comprado'+(nd>1?'s':'')+'. ¿Eliminarla de todos modos?':'¿Eliminar la lista “'+l.name+'”?')){S.lists=S.lists.filter(x=>x!==l);if(S.cur===l.id)S.cur=sortedLists()[0].id;save();closeSheet();render()}}}})}
 function prodForm(id,deptId){
  const p=id?S.prods.find(x=>x.id===id):{name:'',dept:deptId,unit:'pza',qty:'1',ref:'',img:'',freq:false};let img=p.img;
  sheet(`<h3>${id?'Editar producto':'Nuevo producto'}</h3><label>Nombre<input id="f-n" value="${esc(p.name)}"></label><label>Departamento<select id="f-d">${order().map(d=>`<option value="${d.id}"${d.id===p.dept?' selected':''}>${esc(d.name)}</option>`).join('')}</select></label><div class="two"><label>Cantidad habitual<input id="f-q" type="text" inputmode="decimal" autocomplete="off" value="${esc(p.qty||'1')}"></label><label>Unidad<select id="f-u">${unitOpts(p.unit)}</select></label></div><label>Precio de referencia<input id="f-r" value="${esc(p.ref)}" placeholder="Ej. $45/kg"></label><label class="chk"><input type="checkbox" id="f-f"${p.freq?' checked':''}> Frecuente: entra en cada lista nueva</label><div class="ph"><img id="f-p" alt=""${img?` src="${img}"`:' hidden'}><label class="btn"><button type="button" onclick="$('#f-i').click()">Foto</button><input type="file" id="f-i" accept="image/*" hidden></label><button type="button" id="f-x">Quitar foto</button></div><div class="acts"><button class="pri" id="f-s">Guardar</button>${id?'<button class="dng" id="f-b">Dar de baja</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
@@ -196,11 +201,15 @@ const csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
 const app=$('#app');
 app.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,id=el.dataset.id,p=S.prods.find(x=>x.id===id);
  switch(a){
-  case 'mode':mode=id;render();break;
+  case 'mode':mode=id;UNL.clear();render();break;
   case 'reg':S.prods.filter(x=>x.freq&&!x.del).forEach(x=>{const I=cur().items;if(!I[x.id])I[x.id]=mkIt(x)});save();render();break;
   case 'all':S.prods.filter(x=>!x.del).forEach(x=>{const I=cur().items;if(!I[x.id])I[x.id]=mkIt(x)});save();render();break;
-  case 'none':if(Object.keys(cur().items).length&&!confirm('¿Quitar todos los productos de esta lista?'))break;cur().items={};save();render();break;
-  case 'done':{const it=cur().items[id];it.done=!it.done;save();render();break}
+  case 'none':{const I=cur().items,ks=Object.keys(I),dn=ks.filter(k=>I[k].done);if(!ks.length)break;
+   if(dn.length){if(!confirm('Se quitarán los productos pendientes. Los '+dn.length+' ya comprados se conservan.'))break;ks.forEach(k=>{if(!I[k].done)delete I[k]})}
+   else{if(!confirm('¿Quitar todos los productos de esta lista?'))break;cur().items={}}
+   save();render();break}
+  case 'done':{const it=cur().items[id];if(it.done&&!confirm('¿Desmarcar “'+p.name+'” como comprado?'))break;it.done=!it.done;save();render();break}
+  case 'unlock':if(confirm('Este producto ya está marcado como comprado. ¿Seguro que quieres cambiar su cantidad o unidad?')){UNL.add(id);render()}break;
   case 'lnew':listForm();break;case 'ledit':listForm(S.cur);break;
   case 'pic':sheet(`<img class="big" src="${p.img}" alt=""><div class="acts"><button id="f-c">Cerrar</button></div>`,()=>$('#f-c').onclick=closeSheet);break;
   case 'goresp':tab='resp';render();scrollTo(0,0);break;
@@ -219,9 +228,9 @@ app.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)re
  }});
 app.addEventListener('change',e=>{const t=e.target,a=t.dataset.a,id=t.dataset.id;
  if(t.id=='st'){S.store=t.value;save();render();return}
- if(t.id=='ls'){S.cur=t.value;save();render();return}
+ if(t.id=='ls'){S.cur=t.value;UNL.clear();save();render();return}
  const I=cur().items;
- if(a=='tog'){if(t.checked){const p=S.prods.find(x=>x.id==id);I[id]=mkIt(p)}else delete I[id];save();render()}
+ if(a=='tog'){if(t.checked){const p=S.prods.find(x=>x.id==id);I[id]=mkIt(p)}else{if(I[id]&&I[id].done&&!confirm('“'+S.prods.find(x=>x.id==id).name+'” ya está marcado como comprado. ¿Quitarlo de la lista?')){t.checked=true;return}delete I[id];UNL.delete(id)}save();render()}
  else if(a=='q'){let v=t.value.replace(',','.').trim();if(v===''||isNaN(+v))v='1';t.value=v;I[id].q=v;save()}
  else if(a=='u'){I[id].u=t.value;save()}});
 app.addEventListener('focusin',e=>{const t=e.target;if(t.dataset&&(t.dataset.a=='q'||t.id=='f-q'))setTimeout(()=>{t.select();try{t.setSelectionRange(0,t.value.length)}catch(_){}},0)});
