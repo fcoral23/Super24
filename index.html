@@ -19,7 +19,7 @@ button:disabled{opacity:.35}
 button.pri{background:var(--pri);color:var(--onpri);border-color:var(--pri);font-weight:600}
 button.dng{color:var(--red)}
 button.wide{width:100%;margin-top:18px;min-height:48px}
-input,select{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px}
+input,select{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:16px}
 :focus-visible{outline:3px solid var(--cit);outline-offset:1px}
 .bar,.row3,.row2,.acts,.ctl,.ph{display:flex;gap:8px;align-items:center}
 .bar{margin-bottom:10px}.bar select{flex:1;min-width:0}
@@ -61,6 +61,7 @@ nav button span{display:block;font-size:12px}nav button.on{color:var(--pri);font
 .acts{flex-wrap:wrap;margin-top:14px}
 .ph img{width:64px;height:64px;object-fit:cover;border-radius:10px}.ph label{margin:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chips button{font-size:20px;padding:2px 8px;min-height:38px}
+.two{display:flex;gap:10px}.two label{flex:1}
 img.big{width:100%;border-radius:12px}
 .cartbar{display:flex;align-items:center;gap:12px;margin:2px 0 8px}.cartbar svg{width:116px;height:auto;flex:none}.cartbar b{display:block;font-size:18px}.cartbar small{color:var(--mut)}
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
@@ -78,7 +79,15 @@ const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clea
 const DB=()=>new Promise((res,rej)=>{const r=indexedDB.open('lista-super',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
 async function load(){try{const db=await DB();return await new Promise(r=>{const q=db.transaction('kv').objectStore('kv').get('s');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch(e){return null}}
 function save(){clearTimeout(sv);sv=setTimeout(async()=>{try{const db=await DB();db.transaction('kv','readwrite').objectStore('kv').put(S,'s')}catch(e){toast('No se pudo guardar')}},200)}
-const fresh=()=>{const s={app:'lista-super',v:1,stores:[{id:uid(),name:'Mi súper',order:[]}],depts:[],prods:[],list:{},history:[],lastBackup:0};s.store=s.stores[0].id;
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fdate=d=>new Date(d+'T00:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
+function mkList(s,name,date){const l={id:uid(),name,date,t:Date.now(),items:{}};s.lists.push(l);s.cur=l.id;return l}
+const mkIt=p=>({q:p.qty||'1',u:p.unit||'pza',done:false});
+const sortedLists=()=>[...S.lists].sort((a,b)=>b.date.localeCompare(a.date)||(b.t||0)-(a.t||0));
+const cur=()=>S.lists.find(l=>l.id===S.cur)||S.lists[0];
+function migrate(){if(!S.lists||!S.lists.length){S.lists=[];const l=mkList(S,'Mi lista',today());if(S.list)l.items=S.list}delete S.list;if(!S.lists.some(x=>x.id===S.cur))S.cur=sortedLists()[0].id}
+const listBar=()=>`<div class="bar"><select id="ls" aria-label="Lista">${sortedLists().map(l=>`<option value="${l.id}"${l.id==S.cur?' selected':''}>${fdate(l.date)} – ${esc(l.name)}</option>`).join('')}</select><button data-a="lnew">+ Nueva</button><button data-a="ledit" aria-label="Editar lista">✎</button></div>`;
+const fresh=()=>{const s={app:'lista-super',v:1,stores:[{id:uid(),name:'Mi súper',order:[]}],depts:[],prods:[],lists:[],cur:'',history:[],lastBackup:0};s.store=s.stores[0].id;mkList(s,'Mi lista',today());
  [['Frutas y verduras','🥬'],['Carnes y pollo','🥩'],['Lácteos y huevo','🥛'],['Panadería','🍞'],['Abarrotes','🥫'],['Limpieza','🧴']].forEach(([n,e])=>{const d={id:uid(),name:n,emoji:e,img:''};s.depts.push(d);s.stores[0].order.push(d.id)});return s};
 const store=()=>S.stores.find(x=>x.id===S.store)||S.stores[0];
 function order(){const st=store(),ids=st.order.filter(id=>S.depts.some(d=>d.id===id));S.depts.forEach(d=>{if(!ids.includes(d.id))ids.push(d.id)});st.order=ids;return ids.map(id=>S.depts.find(d=>d.id===id))}
@@ -96,7 +105,7 @@ const closeSheet=()=>{$('#sheet').hidden=true;$('#sheet').innerHTML=''};
 function pick(inp,max,cb){inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.src=r.result};r.readAsDataURL(f)}}
 async function dl(name,blob){const f=new File([blob],name,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return true}catch(e){if(e.name==='AbortError')return false}}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);return true}
 
-function rowArmar(p,it){return `<div class="pr"><label class="ck"><input type="checkbox" data-a="tog" data-id="${p.id}"${it?' checked':''} aria-label="Agregar ${esc(p.name)}"></label>${thumb(p)}<div class="nm">${esc(p.name)}${p.freq?' ★':''}<small>${esc(p.ref)}</small></div>${it?`<div class="qt"><input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.q)}" data-a="q" data-id="${p.id}" aria-label="Cantidad"><select data-a="u" data-id="${p.id}" aria-label="Unidad">${unitOpts(it.u)}</select></div>`:''}</div>`}
+function rowArmar(p,it){return `<div class="pr"><label class="ck"><input type="checkbox" data-a="tog" data-id="${p.id}"${it?' checked':''} aria-label="Agregar ${esc(p.name)}"></label>${thumb(p)}<div class="nm">${esc(p.name)}${p.freq?' ★':''}<small>${esc(p.ref)}</small></div>${it?`<div class="qt"><input type="text" inputmode="decimal" autocomplete="off" value="${esc(it.q)}" data-a="q" data-id="${p.id}" aria-label="Cantidad"><select data-a="u" data-id="${p.id}" aria-label="Unidad">${unitOpts(it.u)}</select></div>`:''}</div>`}
 function rowBuy(p,it){return `<div class="pr buy${it.done?' dn':''}" data-a="done" data-id="${p.id}"><span class="circ">${it.done?'✓':''}</span>${thumb(p)}<div class="nm">${esc(p.name)}<small>${esc(p.ref)}</small></div><b class="q">${esc(fmt(it))}</b></div>`}
 const CART=[[7,'<circle cx="112" cy="26" r="15" fill="#6dbf5a"/><path d="M112 14v24M100 20l24 12M124 20l-24 12" stroke="#4a9a3c" stroke-width="2"/>'],
 [5,'<circle cx="72" cy="28" r="11" fill="#f08a1c"/>'],
@@ -108,24 +117,24 @@ function cartBar(L){const n=Object.keys(L).length,dn=Object.values(L).filter(x=>
  const svg=`<svg viewBox="0 0 180 108" role="img" aria-label="${n?'Carrito con productos':'Carrito vacío'}">${CART.filter(c=>n>=c[0]).map(c=>c[1]).join('')}<path d="M6 14H28L50 80H154M66 80V90M140 80V90" fill="none" ${k} stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 38H172L156 76H46Z" style="fill:var(--card);stroke:var(--ink)" stroke-width="4" stroke-linejoin="round"/><path d="M40 57H165M70 38L66 76M100 38L98 76M130 38L130 76M154 38L148 76" style="stroke:var(--line)" stroke-width="2" fill="none"/><circle cx="66" cy="96" r="8" style="fill:var(--ink)"/><circle cx="140" cy="96" r="8" style="fill:var(--ink)"/></svg>`;
  return `<div class="cartbar">${svg}<div><b>${n?n+' producto'+(n>1?'s':'')+' en la lista':'Carrito vacío'}</b><small>${!n?(mode=='armar'?'Marca productos para llenarlo':'Elige productos en Armar'):(mode=='comprar'?dn+' de '+n+' comprados':'Listos para comprar')}</small></div></div>`}
 function vLista(){
- const L=S.list,o=order(),n=Object.keys(L).length,days=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):999;
+ const L=cur().items,o=order(),n=Object.keys(L).length,days=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):999;
  let h=S.prods.length&&days>14?`<div class="note" data-a="goresp">${S.lastBackup?'Hace '+days+' días':'Aún'} no haces un respaldo. Toca aquí para hacerlo.</div>`:'';
+ h+=listBar();
  h+=`<div class="bar">${stSel()}<div class="seg"><button data-a="mode" data-id="armar" class="${mode=='armar'?'on':''}">Armar</button><button data-a="mode" data-id="comprar" class="${mode=='comprar'?'on':''}">Comprar</button></div></div>`;
  h+=cartBar(L);
- if(mode=='armar')h+=`<div class="row3"><button data-a="newl">Nueva lista</button><button data-a="all">Todo</button><button data-a="none">Ninguno</button></div><p class="hint">${n} en la lista. “Nueva lista” carga los productos ★ frecuentes.</p>`;
+ if(mode=='armar')h+=`<div class="row3"><button data-a="reg">★ Regulares</button><button data-a="all">Todo</button><button data-a="none">Ninguno</button></div><p class="hint">${n} en la lista. “Regulares” agrega los productos marcados con ★.</p>`;
  let k=0;
  o.forEach(d=>{let ps=prodsOf(d.id);if(mode=='comprar')ps=ps.filter(p=>L[p.id]);if(!ps.length)return;k++;
   const dn=ps.filter(p=>L[p.id]&&L[p.id].done).length;
   h+=`<section class="dc"><div class="dh"><span class="stop">${k}</span><span class="di">${dIcon(d)}</span><span class="dn">${esc(d.name)}</span>${mode=='comprar'?`<small>${dn}/${ps.length}</small>`:''}</div>`+ps.map(p=>mode=='armar'?rowArmar(p,L[p.id]):rowBuy(p,L[p.id])).join('')+'</section>'});
  if(!k)h+=`<p class="empty">${mode=='armar'?'Aún no hay productos. Agrégalos en Catálogo.':'La lista está vacía. Elige productos en Armar.'}</p>`;
- if(mode=='comprar'&&n)h+='<button class="pri wide" data-a="close">Cerrar lista y guardar en historial</button>';
  return h}
 function vCat(){
  let h=`<div class="bar">${stSel()}<button data-a="storeEdit">Editar</button><button data-a="storeNew">+ Súper</button></div><p class="hint">El orden de los departamentos es propio de cada súper: sigue tu recorrido.</p>`;
  const o=order();
  o.forEach((d,i)=>{h+=`<section class="dc"><div class="dh"><span class="stop">${i+1}</span><span class="di">${dIcon(d)}</span><span class="dn">${esc(d.name)}</span><span class="ctl"><button data-a="dup" data-id="${d.id}"${i?'':' disabled'} aria-label="Subir">↑</button><button data-a="ddn" data-id="${d.id}"${i<o.length-1?'':' disabled'} aria-label="Bajar">↓</button><button data-a="dedit" data-id="${d.id}" aria-label="Editar">✎</button></span></div>`;
   const ps=prodsOf(d.id);
-  ps.forEach((p,j)=>{h+=`<div class="pr"><button class="star${p.freq?' on':''}" data-a="freq" data-id="${p.id}" aria-label="Frecuente">★</button>${thumb(p)}<div class="nm">${esc(p.name)}<small>${p.unit}${p.ref?' – '+esc(p.ref):''}</small></div><span class="ctl"><button data-a="pup" data-id="${p.id}"${j?'':' disabled'} aria-label="Subir">↑</button><button data-a="pdn" data-id="${p.id}"${j<ps.length-1?'':' disabled'} aria-label="Bajar">↓</button><button data-a="pedit" data-id="${p.id}" aria-label="Editar">✎</button></span></div>`});
+  ps.forEach((p,j)=>{h+=`<div class="pr"><button class="star${p.freq?' on':''}" data-a="freq" data-id="${p.id}" aria-label="Frecuente">★</button>${thumb(p)}<div class="nm">${esc(p.name)}<small>${esc(fmt({q:p.qty||'1',u:p.unit}))}${p.ref?' – '+esc(p.ref):''}</small></div><span class="ctl"><button data-a="pup" data-id="${p.id}"${j?'':' disabled'} aria-label="Subir">↑</button><button data-a="pdn" data-id="${p.id}"${j<ps.length-1?'':' disabled'} aria-label="Bajar">↓</button><button data-a="pedit" data-id="${p.id}" aria-label="Editar">✎</button></span></div>`});
   h+=`<button class="add" data-a="padd" data-id="${d.id}">+ Producto</button></section>`});
  h+='<button class="add" data-a="dadd">+ Departamento</button>';
  const tr=S.prods.filter(p=>p.del);
@@ -133,26 +142,36 @@ function vCat(){
  return h}
 function vResp(){
  const d=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):null;
- let h=`<h2>Respaldo</h2><p class="hint">${S.lastBackup?'Último respaldo: hace '+d+(d==1?' día.':' días.'):'Aún no has hecho un respaldo.'} Guarda el archivo en Google Drive o iCloud.</p><div class="row2"><button class="pri" data-a="exp">Exportar respaldo</button><button data-a="imp">Importar respaldo</button></div><input type="file" id="imf" accept=".json,application/json" hidden><h2>Historial de listas</h2>`;
- if(!S.history.length)h+='<p class="hint">Cuando cierres una lista en modo Comprar, aparecerá aquí.</p>';
+ let h=`<h2>Respaldo</h2><p class="hint">${S.lastBackup?'Último respaldo: hace '+d+(d==1?' día.':' días.'):'Aún no has hecho un respaldo.'} Guarda el archivo en Google Drive o iCloud.</p><div class="row2"><button class="pri" data-a="exp">Exportar respaldo</button><button data-a="imp">Importar respaldo</button></div><input type="file" id="imf" accept=".json,application/json" hidden>`;
+ if(S.history.length)h+='<h2>Historial anterior</h2>';
  S.history.forEach(x=>{h+=`<div class="hi"><div><b>${new Date(x.date).toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'})}</b> – ${esc(x.store)}<small>${x.items.length} productos</small></div><span class="ctl"><button data-a="hcsv" data-id="${x.id}">CSV</button><button data-a="hshare" data-id="${x.id}">Enviar</button><button class="dng" data-a="hdel" data-id="${x.id}" aria-label="Borrar">✕</button></span></div>`});
  return h}
 function render(){const y=scrollY;$('#app').innerHTML={lista:vLista,cat:vCat,resp:vResp}[tab]();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==tab));scrollTo(0,y)}
 
-function newList(){if(Object.keys(S.list).length&&!confirm('Se reemplazará la lista actual. ¿Continuar?'))return;S.list={};S.prods.filter(p=>p.freq&&!p.del).forEach(p=>S.list[p.id]={q:'',u:p.unit||'pza',done:false});save();render()}
-function closeList(){if(!confirm('¿Cerrar la lista y guardarla en el historial?'))return;
- const items=Object.entries(S.list).map(([id,it])=>{const p=S.prods.find(x=>x.id===id);return p&&{name:p.name,dept:(S.depts.find(d=>d.id===p.dept)||{}).name||'',q:it.q,u:it.u,done:!!it.done}}).filter(Boolean);
- S.history.unshift({id:uid(),date:new Date().toISOString(),store:store().name,items});S.history=S.history.slice(0,200);S.list={};mode='armar';save();render();toast('Lista guardada en el historial')}
+function lrows(l){return Object.entries(l.items).map(([id,it])=>{const p=S.prods.find(x=>x.id===id);return p&&{name:p.name,dept:(S.depts.find(d=>d.id===p.dept)||{}).name||'',q:it.q,u:it.u,done:!!it.done}}).filter(Boolean)}
+function csvOut(nm,items){const rows=[['Departamento','Producto','Cantidad','Unidad','Comprado'],...items.map(i=>[i.dept,i.name,i.q,i.u,i.done?'sí':'no'])];dl(nm+'.csv',new Blob(['\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\n')],{type:'text/csv'}))}
+function txtOut(items){const by={};items.forEach(i=>(by[i.dept]=by[i.dept]||[]).push('• '+i.name+(fmt(i)?': '+fmt(i):'')));const t=Object.entries(by).map(([k,v])=>k+'\n'+v.join('\n')).join('\n\n');if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Copiado'))}
+function listForm(id){const l=id?S.lists.find(x=>x.id===id):{name:'',date:today()};
+ sheet(`<h3>${id?'Editar lista':'Nueva lista'}</h3><label>Nombre<input id="f-n" value="${esc(l.name)}" placeholder="Ej. Compra semanal"></label><label>Fecha<input id="f-d" type="date" value="${l.date}"></label>${id?'':'<label class="chk"><input type="checkbox" id="f-f" checked> Cargar productos regulares ★</label>'}<div class="acts"><button class="pri" id="f-s">Guardar</button>${id?'<button id="f-csv">CSV</button><button id="f-tx">Enviar</button><button id="f-dup">Duplicar</button>':''}${id&&S.lists.length>1?'<button class="dng" id="f-b">Eliminar</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
+  $('#f-c').onclick=closeSheet;
+  $('#f-s').onclick=()=>{const d=$('#f-d').value||today(),n=$('#f-n').value.trim()||('Lista '+fdate(d));
+   if(id){l.name=n;l.date=d}else{const nl=mkList(S,n,d);if($('#f-f').checked)S.prods.filter(p=>p.freq&&!p.del).forEach(p=>nl.items[p.id]=mkIt(p))}
+   save();closeSheet();render()};
+  if(id){
+   $('#f-csv').onclick=()=>csvOut('lista-'+l.date,lrows(l));
+   $('#f-tx').onclick=()=>txtOut(lrows(l));
+   $('#f-dup').onclick=()=>{const nl=mkList(S,l.name+' (copia)',today());Object.entries(l.items).forEach(([k,v])=>nl.items[k]={...v,done:false});save();closeSheet();render();toast('Lista duplicada')};
+   const b=$('#f-b');if(b)b.onclick=()=>{if(confirm('¿Eliminar la lista “'+l.name+'”?')){S.lists=S.lists.filter(x=>x!==l);if(S.cur===l.id)S.cur=sortedLists()[0].id;save();closeSheet();render()}}}})}
 function prodForm(id,deptId){
- const p=id?S.prods.find(x=>x.id===id):{name:'',dept:deptId,unit:'pza',ref:'',img:'',freq:false};let img=p.img;
- sheet(`<h3>${id?'Editar producto':'Nuevo producto'}</h3><label>Nombre<input id="f-n" value="${esc(p.name)}"></label><label>Departamento<select id="f-d">${order().map(d=>`<option value="${d.id}"${d.id===p.dept?' selected':''}>${esc(d.name)}</option>`).join('')}</select></label><label>Unidad habitual<select id="f-u">${unitOpts(p.unit)}</select></label><label>Precio de referencia<input id="f-r" value="${esc(p.ref)}" placeholder="Ej. $45/kg"></label><label class="chk"><input type="checkbox" id="f-f"${p.freq?' checked':''}> Frecuente: entra en cada lista nueva</label><div class="ph"><img id="f-p" alt=""${img?` src="${img}"`:' hidden'}><label class="btn"><button type="button" onclick="$('#f-i').click()">Foto</button><input type="file" id="f-i" accept="image/*" hidden></label><button type="button" id="f-x">Quitar foto</button></div><div class="acts"><button class="pri" id="f-s">Guardar</button>${id?'<button class="dng" id="f-b">Dar de baja</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
+ const p=id?S.prods.find(x=>x.id===id):{name:'',dept:deptId,unit:'pza',qty:'1',ref:'',img:'',freq:false};let img=p.img;
+ sheet(`<h3>${id?'Editar producto':'Nuevo producto'}</h3><label>Nombre<input id="f-n" value="${esc(p.name)}"></label><label>Departamento<select id="f-d">${order().map(d=>`<option value="${d.id}"${d.id===p.dept?' selected':''}>${esc(d.name)}</option>`).join('')}</select></label><div class="two"><label>Cantidad habitual<input id="f-q" type="text" inputmode="decimal" autocomplete="off" value="${esc(p.qty||'1')}"></label><label>Unidad<select id="f-u">${unitOpts(p.unit)}</select></label></div><label>Precio de referencia<input id="f-r" value="${esc(p.ref)}" placeholder="Ej. $45/kg"></label><label class="chk"><input type="checkbox" id="f-f"${p.freq?' checked':''}> Frecuente: entra en cada lista nueva</label><div class="ph"><img id="f-p" alt=""${img?` src="${img}"`:' hidden'}><label class="btn"><button type="button" onclick="$('#f-i').click()">Foto</button><input type="file" id="f-i" accept="image/*" hidden></label><button type="button" id="f-x">Quitar foto</button></div><div class="acts"><button class="pri" id="f-s">Guardar</button>${id?'<button class="dng" id="f-b">Dar de baja</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
   pick($('#f-i'),800,u=>{img=u;$('#f-p').src=u;$('#f-p').hidden=false});
   $('#f-x').onclick=()=>{img='';$('#f-p').hidden=true};$('#f-c').onclick=closeSheet;
   $('#f-s').onclick=()=>{const n=$('#f-n').value.trim();if(!n){$('#f-n').focus();return}
-   const v={name:n,dept:$('#f-d').value,unit:$('#f-u').value,ref:$('#f-r').value.trim(),freq:$('#f-f').checked,img};
+   let qv=$('#f-q').value.replace(',','.').trim();if(qv===''||isNaN(+qv))qv='1';const v={name:n,dept:$('#f-d').value,qty:qv,unit:$('#f-u').value,ref:$('#f-r').value.trim(),freq:$('#f-f').checked,img};
    if(id){const q=S.prods.find(x=>x.id===id);if(q.dept!==v.dept){S.prods.splice(S.prods.indexOf(q),1);Object.assign(q,v);S.prods.push(q)}else Object.assign(q,v)}else S.prods.push({id:uid(),del:false,...v});
    save();closeSheet();render()};
-  if(id)$('#f-b').onclick=()=>{if(confirm('¿Dar de baja “'+p.name+'”? Podrás restaurarlo desde la papelera.')){p.del=true;delete S.list[id];save();closeSheet();render()}}})}
+  if(id)$('#f-b').onclick=()=>{if(confirm('¿Dar de baja “'+p.name+'”? Podrás restaurarlo desde la papelera.')){p.del=true;S.lists.forEach(l=>delete l.items[id]);save();closeSheet();render()}}})}
 function deptForm(id){
  const d=id?S.depts.find(x=>x.id===id):{name:'',emoji:'🛒',img:''};let img=d.img;
  sheet(`<h3>${id?'Editar departamento':'Nuevo departamento'}</h3><label>Nombre<input id="f-n" value="${esc(d.name)}"></label><label>Emoji<input id="f-e" value="${esc(d.emoji)}"></label><div class="chips">${EM.map(e=>`<button type="button" data-e="${e}">${e}</button>`).join('')}</div><div class="ph"><img id="f-p" alt=""${img?` src="${img}"`:' hidden'}><button type="button" onclick="$('#f-i').click()">Usar foto</button><input type="file" id="f-i" accept="image/*" hidden><button type="button" id="f-x">Quitar foto</button></div><div class="acts"><button class="pri" id="f-s">Guardar</button>${id?'<button class="dng" id="f-b">Eliminar</button>':''}<button id="f-c">Cancelar</button></div>`,()=>{
@@ -170,19 +189,19 @@ async function exp(){const ok=await dl('lista-super-'+new Date().toISOString().s
 function imp(){const f=$('#imf');f.value='';f.onchange=async()=>{try{const d=JSON.parse(await f.files[0].text());if(d.app!=='lista-super'||!Array.isArray(d.depts)||!Array.isArray(d.prods)||!Array.isArray(d.stores))throw 0;
  sheet(`<h3>Importar respaldo</h3><p>${d.depts.length} departamentos, ${d.prods.length} productos, ${d.stores.length} súper(s).</p><div class="acts"><button class="dng" id="i-r">Reemplazar todo</button><button class="pri" id="i-m">Combinar</button><button id="i-c">Cancelar</button></div>`,()=>{
   $('#i-c').onclick=closeSheet;
-  $('#i-r').onclick=()=>{S=Object.assign(fresh(),d);if(!S.stores.some(s=>s.id===S.store))S.store=S.stores[0].id;save();closeSheet();render();toast('Respaldo restaurado')};
-  $('#i-m').onclick=()=>{const add=(a,b)=>(b||[]).forEach(x=>{if(!a.some(y=>y.id===x.id))a.push(x)});add(S.depts,d.depts);add(S.prods,d.prods);add(S.stores,d.stores);add(S.history,d.history);save();closeSheet();render();toast('Respaldo combinado')}})}
+  $('#i-r').onclick=()=>{S=Object.assign(fresh(),d);if(!d.lists)S.lists=[];migrate();if(!S.stores.some(s=>s.id===S.store))S.store=S.stores[0].id;save();closeSheet();render();toast('Respaldo restaurado')};
+  $('#i-m').onclick=()=>{const add=(a,b)=>(b||[]).forEach(x=>{if(!a.some(y=>y.id===x.id))a.push(x)});add(S.depts,d.depts);add(S.prods,d.prods);add(S.stores,d.stores);add(S.history,d.history);add(S.lists,d.lists);save();closeSheet();render();toast('Respaldo combinado')}})}
  catch(e){alert('El archivo no es un respaldo válido de Lista del Súper.')}};f.click()}
 const csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
 const app=$('#app');
 app.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,id=el.dataset.id,p=S.prods.find(x=>x.id===id);
  switch(a){
   case 'mode':mode=id;render();break;
-  case 'newl':newList();break;
-  case 'all':S.prods.filter(x=>!x.del).forEach(x=>{if(!S.list[x.id])S.list[x.id]={q:'',u:x.unit||'pza',done:false}});save();render();break;
-  case 'none':if(Object.keys(S.list).length&&!confirm('¿Quitar todos los productos de la lista?'))break;S.list={};save();render();break;
-  case 'done':S.list[id].done=!S.list[id].done;save();render();break;
-  case 'close':closeList();break;
+  case 'reg':S.prods.filter(x=>x.freq&&!x.del).forEach(x=>{const I=cur().items;if(!I[x.id])I[x.id]=mkIt(x)});save();render();break;
+  case 'all':S.prods.filter(x=>!x.del).forEach(x=>{const I=cur().items;if(!I[x.id])I[x.id]=mkIt(x)});save();render();break;
+  case 'none':if(Object.keys(cur().items).length&&!confirm('¿Quitar todos los productos de esta lista?'))break;cur().items={};save();render();break;
+  case 'done':{const it=cur().items[id];it.done=!it.done;save();render();break}
+  case 'lnew':listForm();break;case 'ledit':listForm(S.cur);break;
   case 'pic':sheet(`<img class="big" src="${p.img}" alt=""><div class="acts"><button id="f-c">Cerrar</button></div>`,()=>$('#f-c').onclick=closeSheet);break;
   case 'goresp':tab='resp';render();scrollTo(0,0);break;
   case 'dup':mvDept(id,-1);break;case 'ddn':mvDept(id,1);break;
@@ -200,10 +219,13 @@ app.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)re
  }});
 app.addEventListener('change',e=>{const t=e.target,a=t.dataset.a,id=t.dataset.id;
  if(t.id=='st'){S.store=t.value;save();render();return}
- if(a=='tog'){if(t.checked){const p=S.prods.find(x=>x.id===id);S.list[id]={q:'',u:p.unit||'pza',done:false}}else delete S.list[id];save();render()}
- else if(a=='q'){S.list[id].q=t.value;save()}
- else if(a=='u'){S.list[id].u=t.value;save()}});
-(async()=>{S=await load()||fresh();if(!S.stores.some(s=>s.id===S.store))S.store=S.stores[0].id;
+ if(t.id=='ls'){S.cur=t.value;save();render();return}
+ const I=cur().items;
+ if(a=='tog'){if(t.checked){const p=S.prods.find(x=>x.id==id);I[id]=mkIt(p)}else delete I[id];save();render()}
+ else if(a=='q'){let v=t.value.replace(',','.').trim();if(v===''||isNaN(+v))v='1';t.value=v;I[id].q=v;save()}
+ else if(a=='u'){I[id].u=t.value;save()}});
+app.addEventListener('focusin',e=>{const t=e.target;if(t.dataset&&(t.dataset.a=='q'||t.id=='f-q'))setTimeout(()=>{t.select();try{t.setSelectionRange(0,t.value.length)}catch(_){}},0)});
+(async()=>{S=await load()||fresh();migrate();if(!S.stores.some(s=>s.id===S.store))S.store=S.stores[0].id;
  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
  document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render();scrollTo(0,0)});
  render();
